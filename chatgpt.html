@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mangala Oyunu - Demo</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at top, #f2efe9, #e3dacb);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 100vh;
+      color: #333;
+    }
+
+    header {
+      background: #6b705c;
+      color: #fff;
+      width: 100%;
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 10px;
+      margin: 2rem 0;
+    }
+
+    .pit {
+      background: #d2b48c;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .pit:hover {
+      transform: scale(1.1);
+      background: #c5a471;
+    }
+
+    .store {
+      grid-row: span 2;
+      background: #a98467;
+      width: 60px;
+      height: 130px;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
+    }
+
+    footer {
+      padding: 1rem;
+      text-align: center;
+    }
+
+    button {
+      background: #6b705c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.5rem;
+      margin: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #8c9575;
+    }
+  </style>
+</head>
+<body>
+  <header>Mangala Oyunu</header>
+  <main>
+    <div class="board" id="board"></div>
+    <div>
+      <button onclick="startGame()">Başlat</button>
+      <button onclick="showRules()">Kurallar</button>
+    </div>
+  </main>
+  <footer>
+    <small>© 2025 Mangala Projesi – Demo Sürüm</small>
+  </footer>
+
+  <script>
+    const boardEl = document.getElementById('board');
+
+    // Basit placeholder tahta (6x2 + 2 store)
+    function drawBoard() {
+      boardEl.innerHTML = '';
+      const store1 = document.createElement('div');
+      store1.className = 'store';
+      store1.textContent = '0';
+      boardEl.appendChild(store1);
+
+      for (let i = 0; i < 6; i++) {
+        const pitTop = document.createElement('div');
+        pitTop.className = 'pit';
+        pitTop.textContent = '4';
+        boardEl.appendChild(pitTop);
+      }
+
+      const store2 = document.createElement('div');
+      store2.className = 'store';
+      store2.textContent = '0';
+      boardEl.appendChild(store2);
+
+      for (let i = 0; i < 6; i++) {
+        const pitBottom = document.createElement('div');
+        pitBottom.className = 'pit';
+        pitBottom.textContent = '4';
+        boardEl.appendChild(pitBottom);
+      }
+    }
+
+    function startGame() {
+      alert('Oyun başlatılıyor (demo). Gerçek zamanlı versiyon yakında!');
+    }
+
+    function showRules() {
+      alert('Her oyuncunun 6 çukuru ve 1 hazinesi vardır. Her çukurda 4 taşla başlanır. Oyuncular sırayla taş dağıtır...');
+    }
+
+    drawBoard();
+  </script>
+</body>
+</html>
+

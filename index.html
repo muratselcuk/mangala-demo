@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mangala Oyunu - Online Oyna</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        header {
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 0.9; }
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .game-preview {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: scaleIn 0.8s ease-out 0.5s both;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .turn-indicator {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .mangala-board {
+            background: linear-gradient(145deg, #8b5a3c, #6d4c3d);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 80px repeat(6, 1fr) 80px;
+            grid-template-rows: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .treasure {
+            background: linear-gradient(145deg, #a0723b, #7a5530);
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+            grid-row: 1 / 3;
+            min-height: 150px;
+        }
+
+        .treasure-left {
+            grid-column: 1;
+        }
+
+        .treasure-right {
+            grid-column: 8;
+        }
+
+        .pit {
+            background: radial-gradient(circle at 30% 30%, #4a3728, #2d2318);
+            border-radius: 50%;
+            aspect-ratio: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 8px;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pit.active:hover {
+            transform: translateY(-3px);
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.5), 0 6px 12px rgba(255, 215, 0, 0.3);
+        }
+
+        .pit.inactive {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .pit::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .top-row {
+            grid-row: 1;
+        }
+
+        .bottom-row {
+            grid-row: 2;
+        }
+
+        .stone {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, #f4e4c1, #c9a96e);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: stonePop 0.3s ease-out;
+        }
+
+        @keyframes stonePop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            animation: fadeInUp 0.8s ease-out 0.8s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.4rem;
+        }
+
+        .feature-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+            font-weight: bold;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(245, 87, 108, 0.6);
+        }
+
+        footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .tagline { font-size: 1rem; }
+            .mangala-board {
+                grid-template-columns: 60px repeat(6, 1fr) 60px;
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+            .stone {
+                width: 8px;
+                height: 8px;
+            }
+            .treasure {
+                min-height: 100px;
+            }
+            .game-preview {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <header>
+        <h1>🎮 Mangala Oyunu</h1>
+        <p class="tagline">Türk kültürünün en sevilen geleneksel strateji oyunu artık online!</p>
+    </header>
+
+    <main>
+        <div class="game-preview">
+            <div class="turn-indicator" id="turnIndicator">Oyuncu 1'in Sırası (Alt Sıra)</div>
+            
+            <div class="mangala-board" id="board">
+                <div class="treasure treasure-left" id="treasure-0" data-index="0"></div>
+                
+                <div class="pit top-row" data-index="1"></div>
+                <div class="pit top-row" data-index="2"></div>
+                <div class="pit top-row" data-index="3"></div>
+                <div class="pit top-row" data-index="4"></div>
+                <div class="pit top-row" data-index="5"></div>
+                <div class="pit top-row" data-index="6"></div>
+                
+                <div class="treasure treasure-right" id="treasure-7" data-index="7"></div>
+                
+                <div class="pit bottom-row" data-index="8"></div>
+                <div class="pit bottom-row" data-index="9"></div>
+                <div class="pit bottom-row" data-index="10"></div>
+                <div class="pit bottom-row" data-index="11"></div>
+                <div class="pit bottom-row" data-index="12"></div>
+                <div class="pit bottom-row" data-index="13"></div>
+            </div>
+            
+            <p style="text-align: center; opacity: 0.9; font-size: 1.1rem;">
+                Taşlarını stratejik olarak dağıt, rakibini geç ve kazanan sen ol!
+            </p>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>Online Çok Oyunculu</h3>
+                <p>Arkadaşlarınla veya dünyanın her yerinden oyuncularla gerçek zamanlı oyna</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>Yapay Zeka Rakip</h3>
+                <p>Farklı zorluk seviyelerinde AI ile pratik yap ve stratejini geliştir</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Her Cihazda Çalışır</h3>
+                <p>Telefon, tablet veya bilgisayardan sorunsuz oyun deneyimi</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏆</div>
+                <h3>Sıralama Sistemi</h3>
+                <p>Küresel lider tablosunda yüksel ve en iyi oyuncular arasına katıl</p>
+            </div>
+        </div>
+
+        <button class="cta-button" onclick="alert('Oyun çok yakında yayına girecek! 🎉')">
+            Yakında Yayında! 🚀
+        </button>
+    </main>
+
+    <footer>
+        <p>© 2024 Mangala Online | Geleneksel Türk oyununu modern teknoloji ile buluşturuyoruz</p>
+    </footer>
+
+    <script>
+        // Oyun durumu
+        const gameState = {
+            pits: [0, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4], // 0 ve 7 hazine çukurları
+            currentPlayer: 1, // 1: alt sıra (8-13), 2: üst sıra (1-6)
+        };
+
+        // Animasyonlu partiküller oluştur
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Taşları render et
+        function renderStones() {
+            gameState.pits.forEach((count, index) => {
+                const pit = document.querySelector(`[data-index="${index}"]`);
+                pit.innerHTML = '';
+                
+                for (let i = 0; i < count; i++) {
+                    const stone = document.createElement('div');
+                    stone.className = 'stone';
+                    pit.appendChild(stone);
+                }
+            });
+            updatePitStates();
+        }
+
+        // Çukur durumlarını güncelle (tıklanabilir/değil)
+        function updatePitStates() {
+            const pits = document.querySelectorAll('.pit');
+            pits.forEach((pit, idx) => {
+                const dataIndex = parseInt(pit.getAttribute('data-index'));
+                
+                if (gameState.currentPlayer === 1) {
+                    // Alt sıra oynarsa (8-13)
+                    if (dataIndex >= 8 && dataIndex <= 13 && gameState.pits[dataIndex] > 0) {
+                        pit.classList.add('active');
+                        pit.classList.remove('inactive');
+                    } else {
+                        pit.classList.remove('active');
+                        pit.classList.add('inactive');
+                    }
+                } else {
+                    // Üst sıra oynarsa (1-6)
+                    if (dataIndex >= 1 && dataIndex <= 6 && gameState.pits[dataIndex] > 0) {
+                        pit.classList.add('active');
+                        pit.classList.remove('inactive');
+                    } else {
+                        pit.classList.remove('active');
+                        pit.classList.add('inactive');
+                    }
+                }
+            });
+        }
+
+        // Taş dağıtma fonksiyonu
+        function distributeStones(pitIndex) {
+            let stones = gameState.pits[pitIndex];
+            if (stones === 0) return;
+            
+            gameState.pits[pitIndex] = 0;
+            let currentIndex = pitIndex;
+            
+            while (stones > 0) {
+                currentIndex = (currentIndex + 1) % 14;
+                
+                // Rakibin hazine çukurunu atla
+                if (gameState.currentPlayer === 1 && currentIndex === 0) continue;
+                if (gameState.currentPlayer === 2 && currentIndex === 7) continue;
+                
+                gameState.pits[currentIndex]++;
+                stones--;
+            }
+            
+            // Sıra değiştirme kontrolü
+            const lastPitWasTreasure = (gameState.currentPlayer === 1 && currentIndex === 7) || 
+                                       (gameState.currentPlayer === 2 && currentIndex === 0);
+            
+            if (!lastPitWasTreasure) {
+                gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+            }
+            
+            updateTurnIndicator();
+            renderStones();
+        }
+
+        // Sıra göstergesini güncelle
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            if (gameState.currentPlayer === 1) {
+                indicator.textContent = 'Oyuncu 1\'in Sırası (Alt Sıra)';
+                indicator.style.background = 'rgba(76, 175, 80, 0.3)';
+            } else {
+                indicator.textContent = 'Oyuncu 2\'nin Sırası (Üst Sıra)';
+                indicator.style.background = 'rgba(33, 150, 243, 0.3)';
+            }
+        }
+
+        // Çukurlara tıklama olayı ekle
+        document.querySelectorAll('.pit').forEach(pit => {
+            pit.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                
+                // Oyuncunun kendi sırasındaki çukurlarına tıklayabilir
+                if (gameState.currentPlayer === 1 && index >= 8 && index <= 13) {
+                    distributeStones(index);
+                } else if (gameState.currentPlayer === 2 && index >= 1 && index <= 6) {
+                    distributeStones(index);
+                }
+            });
+        });
+
+        // Oyunu başlat
+        renderStones();
+    </script>
+</body>
+</html>

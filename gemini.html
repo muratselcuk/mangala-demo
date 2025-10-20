@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mangala MVP Demo - Preact + Tailwind Hissi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mangala tahtası (oyuklar ve hazineler) için özel stiller */
+        .pit-container {
+            display: grid;
+            grid-template-columns: 1fr repeat(6, 1fr) 1fr; /* 1 Hazine, 6 Kuyu, 1 Hazine */
+            gap: 0.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .pit, .store {
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            position: relative;
+            min-height: 120px;
+        }
+        .pit {
+            background-color: #f7e0c7; /* Açık ahşap rengi */
+            aspect-ratio: 1 / 1;
+            border-radius: 9999px; /* Tam yuvarlak */
+        }
+        .store {
+            background-color: #c08456; /* Koyu ahşap rengi */
+            border-radius: 9999px; /* Tam yuvarlak */
+        }
+
+        .pit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stone-count {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #4a2d1d;
+        }
+        .stone {
+            display: block;
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #0d47a1; /* Taş rengi */
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            pointer-events: none; /* Taşların tıklanmasını engelle */
+        }
+
+        /* Responsive düzenleme: Mobil için kuyu boyutları */
+        @media (max-width: 640px) {
+            .pit, .store {
+                min-height: 80px;
+            }
+            .stone-count {
+                font-size: 1rem;
+            }
+            .stone {
+                width: 8px;
+                height: 8px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 font-sans">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-lg p-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Mangala MVP Demo (Preact/Tailwind Hissi)</h1>
+        
+        <div id="status-bar" class="text-center mb-4 p-3 bg-indigo-100 border border-indigo-300 rounded-md">
+            <p id="turn-display" class="text-xl font-semibold text-indigo-800">Sıra: Oyuncu 1</p>
+            <p class="text-gray-600">P1 Hazine: <span id="p1-store-count">0</span> | P2 Hazine: <span id="p2-store-count">0</span></p>
+        </div>
+
+        <div class="pit-container">
+            
+            <div id="store-p2" class="store col-span-1 rounded-l-full">
+                <p class="text-sm font-medium text-white">P2 Hazine</p>
+                <div class="stone-count text-white" id="count-p2-store">0</div>
+            </div>
+
+            <div id="pit-11" class="pit pit-p2 col-span-1" data-index="11"><div class="stone-count">4</div></div>
+            <div id="pit-10" class="pit pit-p2 col-span-1" data-index="10"><div class="stone-count">4</div></div>
+            <div id="pit-9" class="pit pit-p2 col-span-1" data-index="9"><div class="stone-count">4</div></div>
+            <div id="pit-8" class="pit pit-p2 col-span-1" data-index="8"><div class="stone-count">4</div></div>
+            <div id="pit-7" class="pit pit-p2 col-span-1" data-index="7"><div class="stone-count">4</div></div>
+            <div id="pit-6" class="pit pit-p2 col-span-1" data-index="6"><div class="stone-count">4</div></div>
+            
+            <div id="store-p1" class="store col-span-1 rounded-r-full">
+                <p class="text-sm font-medium text-white">P1 Hazine</p>
+                <div class="stone-count text-white" id="count-p1-store">0</div>
+            </div>
+
+            <div id="pit-0" class="pit pit-p1 col-span-1" data-index="0"><div class="stone-count">4</div></div>
+            <div id="pit-1" class="pit pit-p1 col-span-1" data-index="1"><div class="stone-count">4</div></div>
+            <div id="pit-2" class="pit pit-p1 col-span-1" data-index="2"><div class="stone-count">4</div></div>
+            <div id="pit-3" class="pit pit-p1 col-span-1" data-index="3"><div class="stone-count">4</div></div>
+            <div id="pit-4" class="pit pit-p1 col-span-1" data-index="4"><div class="stone-count">4</div></div>
+            <div id="pit-5" class="pit pit-p1 col-span-1" data-index="5"><div class="stone-count">4</div></div>
+        </div>
+
+    </div>
+
+    <script>
+        // Tahta durumu: 12 kuyu (P1: 0-5, P2: 6-11), 2 hazine (P1: 12, P2: 13)
+        let boardState = Array(12).fill(4);
+        let storeState = [0, 0]; // [P1 Hazinesi, P2 Hazinesi]
+        let currentPlayer = 0; // 0: P1, 1: P2
+        const PIT_P1_START = 0;
+        const PIT_P1_END = 5;
+        const PIT_P2_START = 6;
+        const PIT_P2_END = 11;
+        
+        // Rastgele taş konumları oluşturur (görselleştirme için)
+        function renderStones(pitElement, count) {
+            pitElement.querySelectorAll('.stone').forEach(s => s.remove());
+            if (count > 0) {
+                for (let i = 0; i < Math.min(count, 30); i++) { // Maks 30 taş göster
+                    const stone = document.createElement('span');
+                    stone.classList.add('stone');
+                    // Rastgele konumu ayarla
+                    stone.style.left = `${Math.random() * 60 + 20}%`; 
+                    stone.style.top = `${Math.random() * 60 + 20}%`;
+                    pitElement.appendChild(stone);
+                }
+            }
+        }
+
+        // Tahtayı ve sayaçları günceller
+        function updateUI() {
+            // Kuyuları güncelle
+            boardState.forEach((count, index) => {
+                const pitElement = document.getElementById(`pit-${index}`);
+                if (pitElement) {
+                    pitElement.querySelector('.stone-count').textContent = count;
+                    renderStones(pitElement, count);
+                }
+            });
+
+            // Hazineleri güncelle
+            document.getElementById('count-p1-store').textContent = storeState[0];
+            document.getElementById('count-p2-store').textContent = storeState[1];
+            renderStones(document.getElementById('store-p1'), storeState[0]);
+            renderStones(document.getElementById('store-p2'), storeState[1]);
+
+
+            // Sırayı güncelle
+            const turnText = `Sıra: Oyuncu ${currentPlayer === 0 ? '1' : '2'}`;
+            document.getElementById('turn-display').textContent = turnText;
+            document.getElementById('status-bar').className = `text-center mb-4 p-3 rounded-md transition-colors ${
+                currentPlayer === 0 ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'
+            }`;
+
+            // Tıklanabilir kuyuları belirle
+            document.querySelectorAll('.pit').forEach(pit => {
+                const index = parseInt(pit.dataset.index);
+                const isPlayersPit = currentPlayer === 0 ? (index >= PIT_P1_START && index <= PIT_P1_END) : (index >= PIT_P2_START && index <= PIT_P2_END);
+                
+                if (isPlayersPit && boardState[index] > 0) {
+                    pit.classList.add('hover:bg-yellow-200'); // Tailwind hover efekti ekle
+                    pit.style.opacity = '1';
+                } else {
+                    pit.classList.remove('hover:bg-yellow-200');
+                    pit.style.opacity = '0.7'; // Tıklanamaz olanları soluklaştır
+                }
+            });
+        }
+
+        // Basit simülasyon mantığı (Gerçek kural yok, sadece hareket hissi)
+        function handlePitClick(pitIndex) {
+            const index = parseInt(pitIndex);
+            
+            // Sıra kontrolü
+            const isP1 = currentPlayer === 0;
+            const isP2 = currentPlayer === 1;
+            const isP1Pit = index >= PIT_P1_START && index <= PIT_P1_END;
+            const isP2Pit = index >= PIT_P2_START && index <= PIT_P2_END;
+
+            if (boardState[index] === 0 || (isP1 && !isP1Pit) || (isP2 && !isP2Pit)) {
+                return; // Geçersiz hamle (boş kuyu veya rakibin kuyusu)
+            }
+
+            let stonesToMove = boardState[index];
+            boardState[index] = 0;
+            let currentPit = index;
+
+            // Simülasyon döngüsü
+            for (let i = 0; i < stonesToMove; i++) {
+                currentPit = (currentPit + 1);
+
+                // Kuyu indeksi 11'i geçerse, hazineye bak
+                if (currentPit >= 12) {
+                    currentPit = 0;
+                }
+                
+                // Rakibin hazinesini atla (P1 oynuyorsa P2 hazinesi 13, P2 oynuyorsa P1 hazinesi 6)
+                // Bu basit demo için sadece kuyu indeksi döngüsünü tutalım.
+                
+                if (currentPit === (isP1 ? 12 : 6)) {
+                    // Kendi hazinemiz, taş ekle
+                    storeState[currentPlayer]++;
+                    if (i === stonesToMove - 1) {
+                         // Son taş hazineye geldi simülasyonu (ekstra hamle hakkı)
+                        alert(`Harika! Son taş hazineye geldi. Oyuncu ${currentPlayer === 0 ? '1' : '2'} tekrar oynuyor (Simülasyon).`);
+                        updateUI();
+                        return; // Aynı oyuncuda kal
+                    }
+                    // Eğer son taş değilse, kuyulara devam etmesi için döngüyü yeniden başlat
+                    // Ancak bu Mantıklı değil, Mangala'da hazineye atıldıktan sonra kuyuya devam edilmez.
+                    // Gerçek oyunda taş sayısı azaldığı için bu döngü daha karmaşıktır.
+                    // Basit bir hareket simülasyonu yapalım ve hazineye geldiğinde taşı sayaca ekleyip döngüye devam edelim.
+                    
+                    // Basitlik için: Hazineye atıldığında sonraki kuyuya geçsin.
+                    
+                    if (i < stonesToMove - 1) {
+                        currentPit = (currentPit % 12); // Kuyuya geri dön (basit akış)
+                    }
+
+                } else {
+                    // Kuyuya taş ekle
+                    boardState[currentPit]++;
+                }
+            }
+            
+            // Sıra değişimi (Hazineye son taş gelme kuralını basitleştirerek atladık)
+            currentPlayer = 1 - currentPlayer;
+            updateUI();
+        }
+
+        // Olay dinleyicilerini ata
+        document.querySelectorAll('.pit-p1, .pit-p2').forEach(pit => {
+            pit.addEventListener('click', (e) => {
+                const pitIndex = e.currentTarget.dataset.index;
+                handlePitClick(pitIndex);
+            });
+        });
+
+        // Sayfa yüklendiğinde tahtayı ilk defa çiz
+        updateUI();
+    </script>
+</body>
+</html>
