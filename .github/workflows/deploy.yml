@@ -1,0 +1,27 @@
+name: Auto deploy (mangala)
+
+on:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: deploy-mangala
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Publish to /var/www/mangala
+        run: |
+          set -e
+          SRC_DIR="${GITHUB_WORKSPACE}"
+          DEST_DIR="/var/www/mangala"
+          rsync -av --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            "$SRC_DIR"/ "$DEST_DIR"/
